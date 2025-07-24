@@ -122,12 +122,25 @@ async def get_mobility():
 
     # If the request was successful, return the mobility data
     return {"mobility_data": res.json()}
-
-"""
-Thinking of adding more datasets. Here are some ideas:
-1) https://data.gov.au/data/dataset/nsw-2-nsw-rest-areas/resource/f9d7b812-8c27-4cc6-8dc0-583638adeee5
-
-2) https://data.gov.au/data/dataset/accessible-paths/resource/0015fd5d-c4bc-46ed-b661-56e1d00e36ff
-
-3) https://data.gov.au/data/dataset/ballarat-council-buildings-accessibility/resource/4d06a4af-ff32-474c-aa73-b3e6090b89bc
-"""
+    
+ @app.get("/footpaths-geelong")
+ async def get_footpaths_geelong():
+     url = "https://data.gov.au/geoserver/accessible-paths/wfs?request=GetFeature&typeName=ckan_83915ad0_8f57_4470_8715_e9999ec9227f&outputFormat=json"
+     async with httpx.AsyncClient() as client:
+         try:
+             res = await client.get(url)
+             res.raise_for_status()
+         except Exception as e:
+             return {"error": "Failed to fetch Geelong footpath data", "details": str(e)}
+     return {"geelong_footpaths": res.json()}
+    
+  @app.get("/buildings-ballarat")
+  async def get_ballarat_buildings():
+      url = "https://data.gov.au/data/dataset/077b2fc2-5377-4e19-8d5e-5c12ceefbdfb/resource/383b05f2-a8f8-47c5-9c34-2d6ff9b3757b/download/buildingaccessibility.json"
+      async with httpx.AsyncClient() as client:
+          try:
+              res = await client.get(url)
+              res.raise_for_status()
+          except Exception as e:
+              return {"error": "Failed to fetch Ballarat building accessibility data", "details": str(e)}
+      return {"ballarat_buildings": res.json()}
