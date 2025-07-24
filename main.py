@@ -11,8 +11,20 @@ pip install httpx
 from fastapi import FastAPI, Query
 import httpx
 
+# Import CORS middleware to allow cross-origin requests
+from fastapi.middleware.cors import CORSMiddleware
+
 # Create a FastAPI app instance — this is what handles all incoming requests
 app = FastAPI()
+
+# Add CORS middleware to allow requests from any origin
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # ---------------------------
 # Home page endpoint
