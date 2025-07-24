@@ -6,41 +6,60 @@
     return location.href.includes("realestate.com.au/property");
   };
 
-const getAccessibilityScores = () => {
-  const textContent = document.body.innerText.toLowerCase();
-  let propertyScore = 0;
-  let features = [];
+  const getPropertyScore = () => {
+    const textContent = document.body.innerText.toLowerCase();
+    let score = 0;
+    let features = [];
 
-  // Keyword matches for scoring
-  if (textContent.includes("single-level") || textContent.includes("single storey") || textContent.includes("single story")) {
-    propertyScore += 10;
-    features.push("Single-storey entry");
-  }
-
-  // NEW: Check for more accessibility features
-  const extraFeatures = {
-    "Step-free entry": textContent.includes("step-free entry"),
-    "Wide doorways": textContent.includes("wide doorways"),
-    "Accessible bathroom": textContent.includes("accessible bathroom"),
-    "Roll-in shower": textContent.includes("roll-in shower"),
-    "Elevator": textContent.includes("elevator"),
-  };
-
-  // Add 2 points per feature found, and record which were found
-  for (const [label, found] of Object.entries(extraFeatures)) {
-    if (found) {
-      propertyScore += 2;
-      features.push(label);
+    if (textContent.includes("single-level") || textContent.includes("single storey") || textContent.includes("single story")) {
+      score += 10;
+      features.push("Single-storey entry");
     }
-  }
 
-  return {
-    property: propertyScore,
-    hood: 0,
-    features: features
+    const extraFeatures = {
+      "Step-free entry": textContent.includes("step-free entry"),
+      "Wide doorways": textContent.includes("wide doorways"),
+      "Accessible bathroom": textContent.includes("accessible bathroom"),
+      "Roll-in shower": textContent.includes("roll-in shower"),
+      "Elevator": textContent.includes("elevator"),
+    };
+
+    for (const [label, found] of Object.entries(extraFeatures)) {
+      if (found) {
+        score += 2;
+        features.push(label);
+      }
+    }
+
+    return { property: score, features };
   };
-};
 
+const fetchHoodScore = async () => {
+  try {
+    const lat = -33.8688;  // Sydney (hardcoded for now)
+    const lon = 151.2093;
+
+    // Overpass API: count accessibility features nearby
+    const resOverpass = await fetch(`https://home-free-api.onrender.com/accessibility?lat=${lat}&lon=${lon}`);
+    const dataOverpass = await resOverpass.json();
+    const featuresFound = dataOverpass.accessible_features_found?.[0]?.tags?.total || 0;
+    const overpassScore = Math.min(10, Math.round((featuresFound / 200) * 10)); // Normalize
+
+    // Mobility API: fetch accessible toilets
+    const resMobility = await fetch(`https://home-free-api.onrender.com/mobility`);
+    const dataMobility = await resMobility.json();
+    const toilets = dataMobility.mobility_data || [];
+    const accessibleToilets = toilets.filter(t => t.accessible?.toLowerCase() === "yes").length;
+    const mobilityScore = Math.min(10, Math.round((accessibleToilets / 100) * 10)); // Normalize
+
+    // Combine both scores equally
+    const averageScore = Math.round((overpassScore + mobilityScore) / 2);
+    return averageScore;
+  } catch (error) {
+    console.error("Failed to fetch neighborhood or mobility score:", error);
+    return 0;
+  }
+};
 
   const renderAccessibilityBars = (scores) => {
     const content = document.getElementById("homefree-content");
@@ -68,7 +87,7 @@ const getAccessibilityScores = () => {
     `;
   };
 
-  const createPanel = () => {
+  const createPanel = (scores) => {
     const panel = document.createElement("div");
     panel.id = "homefree-panel";
     panel.style.cssText = `
@@ -129,11 +148,7 @@ const getAccessibilityScores = () => {
       main.style.display = isCollapsed ? "none" : "block";
     });
 
-    // Tab switching logic
     let currentTab = "overview";
-    const scores = getAccessibilityScores();
-    renderAccessibilityBars(scores);
-
     const toggle = panel.querySelector("#homefree-toggle");
     toggle.querySelectorAll("div").forEach(btn => {
       btn.addEventListener("click", () => {
@@ -166,14 +181,18 @@ const getAccessibilityScores = () => {
         }
       });
     });
+
+    renderAccessibilityBars(scores);
   };
 
-  const scanPage = () => {
+  const scanPage = async () => {
     if (isListingPage()) {
       console.log("Listing page detected, injecting panel.");
-      createPanel();
+      const property = getPropertyScore();
+      const hood = await fetchHoodScore();
+      createPanel({ ...property, hood });
     } else {
-      console.log(" Not a listing page, removing panel.");
+      console.log("Not a listing page, removing panel.");
       document.getElementById("homefree-panel")?.remove();
     }
   };
@@ -182,7 +201,7 @@ const getAccessibilityScores = () => {
     const observer = new MutationObserver(() => {
       if (location.href !== lastUrl) {
         lastUrl = location.href;
-        console.log(" URL changed:", lastUrl);
+        console.log("URL changed:", lastUrl);
         setTimeout(scanPage, 1000);
       }
     });
