@@ -69,7 +69,7 @@ def root():
 @app.get("/accessibility")
 async def get_accessibility(lat: float = Query(...), lon: float = Query(...)):
     # This is the Overpass API URL (from OpenStreetMap)
-    overpass_url = "https://overpass-api.de/api/interpreter"
+    overpass_url = "https://overpass.openstreetmap.fr/api/interpreter"
 
     # This is the query that fetches nearby features:
     # - Toilets (amenity=toilets)
