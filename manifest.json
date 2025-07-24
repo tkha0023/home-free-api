@@ -3,7 +3,7 @@
   "name": "Home Free Accessibility Extension",
   "version": "1.0",
   "description": "Shows accessibility score on real estate listings.",
-  "permissions": ["scripting"],
+  "permissions": ["scripting", "https://home-free-api.onrender.com/"],
   "host_permissions": [
     "*://*.realestate.com.au/*",
     "*://*.domain.com.au/*" //not used yet, just for future use//
