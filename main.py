@@ -102,7 +102,7 @@ async def get_accessibility(lat: float = Query(...), lon: float = Query(...)):
 # --------------------------------------------------------------------
 # This route fetches public toilet data from the City of Melbourne's open dataset.
 # The dataset includes information about whether toilets are accessible by wheelchair users
-# To access copy and paste this URL in a new tab: https://5145f266-a838-466f-ad64-71e0143d10c2-00-1ohv6j7rjecxx.pike.replit.dev/mobility
+# To access, copy and paste this URL in a new tab: https://5145f266-a838-466f-ad64-71e0143d10c2-00-1ohv6j7rjecxx.pike.replit.dev/mobility
 # Click on Pretty-print to see the data in a more readable format.
 
 @app.get("/mobility")
@@ -123,24 +123,3 @@ async def get_mobility():
     # If the request was successful, return the mobility data
     return {"mobility_data": res.json()}
     
- @app.get("/footpaths-geelong")
- async def get_footpaths_geelong():
-     url = "https://data.gov.au/geoserver/accessible-paths/wfs?request=GetFeature&typeName=ckan_83915ad0_8f57_4470_8715_e9999ec9227f&outputFormat=json"
-     async with httpx.AsyncClient() as client:
-         try:
-             res = await client.get(url)
-             res.raise_for_status()
-         except Exception as e:
-             return {"error": "Failed to fetch Geelong footpath data", "details": str(e)}
-     return {"geelong_footpaths": res.json()}
-    
-  @app.get("/buildings-ballarat")
-  async def get_ballarat_buildings():
-      url = "https://data.gov.au/data/dataset/077b2fc2-5377-4e19-8d5e-5c12ceefbdfb/resource/383b05f2-a8f8-47c5-9c34-2d6ff9b3757b/download/buildingaccessibility.json"
-      async with httpx.AsyncClient() as client:
-          try:
-              res = await client.get(url)
-              res.raise_for_status()
-          except Exception as e:
-              return {"error": "Failed to fetch Ballarat building accessibility data", "details": str(e)}
-      return {"ballarat_buildings": res.json()}
