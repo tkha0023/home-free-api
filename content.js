@@ -6,22 +6,41 @@
     return location.href.includes("realestate.com.au/property");
   };
 
-  const getAccessibilityScores = () => {
-    const textContent = document.body.innerText.toLowerCase();
-    let propertyScore = 0;
-    let features = [];
+const getAccessibilityScores = () => {
+  const textContent = document.body.innerText.toLowerCase();
+  let propertyScore = 0;
+  let features = [];
 
-    if (textContent.includes("single-level") || textContent.includes("single storey") || textContent.includes("single story")) {
-      propertyScore += 10;
-      features.push("Single-storey entry");
-    }
+  // Keyword matches for scoring
+  if (textContent.includes("single-level") || textContent.includes("single storey") || textContent.includes("single story")) {
+    propertyScore += 10;
+    features.push("Single-storey entry");
+  }
 
-    return {
-      property: propertyScore,
-      hood: 0,
-      features: features
-    };
+  // NEW: Check for more accessibility features
+  const extraFeatures = {
+    "Step-free entry": textContent.includes("step-free entry"),
+    "Wide doorways": textContent.includes("wide doorways"),
+    "Accessible bathroom": textContent.includes("accessible bathroom"),
+    "Roll-in shower": textContent.includes("roll-in shower"),
+    "Elevator": textContent.includes("elevator"),
   };
+
+  // Add 2 points per feature found, and record which were found
+  for (const [label, found] of Object.entries(extraFeatures)) {
+    if (found) {
+      propertyScore += 2;
+      features.push(label);
+    }
+  }
+
+  return {
+    property: propertyScore,
+    hood: 0,
+    features: features
+  };
+};
+
 
   const renderAccessibilityBars = (scores) => {
     const content = document.getElementById("homefree-content");
