@@ -34,32 +34,64 @@
     return { property: score, features };
   };
 
-const fetchHoodScore = async () => {
-  try {
-    const lat = -33.8688;  // Sydney (hardcoded for now)
-    const lon = 151.2093;
-
-    // Overpass API: count accessibility features nearby
-    const resOverpass = await fetch(`https://home-free-api.onrender.com/accessibility?lat=${lat}&lon=${lon}`);
-    const dataOverpass = await resOverpass.json();
-    const featuresFound = dataOverpass.accessible_features_found?.[0]?.tags?.total || 0;
-    const overpassScore = Math.min(10, Math.round((featuresFound / 200) * 10)); // Normalize
-
-    // Mobility API: fetch accessible toilets
-    const resMobility = await fetch(`https://home-free-api.onrender.com/mobility`);
-    const dataMobility = await resMobility.json();
-    const toilets = dataMobility.mobility_data || [];
-    const accessibleToilets = toilets.filter(t => t.accessible?.toLowerCase() === "yes").length;
-    const mobilityScore = Math.min(10, Math.round((accessibleToilets / 100) * 10)); // Normalize
-
-    // Combine both scores equally
-    const averageScore = Math.round((overpassScore + mobilityScore) / 2);
-    return averageScore;
-  } catch (error) {
-    console.error("Failed to fetch neighborhood or mobility score:", error);
-    return 0;
-  }
-};
+  const fetchHoodScore = async () => {
+    console.log(" fetchHoodScore() called");
+  
+    let lat = -33.8688, lon = 151.2093; // default fallback we should consider better error handling for this at some point
+  
+    const jsonLdTag = document.querySelector('script[type="application/ld+json"]');
+    if (jsonLdTag) {
+      try {
+        const parsed = JSON.parse(jsonLdTag.textContent);
+        const data = Array.isArray(parsed) ? parsed.find(obj => obj['@type'] === 'Residence') : parsed;
+  
+        if (data?.address?.streetAddress && data?.address?.addressLocality) {
+          const fullAddress = `${data.address.streetAddress}, ${data.address.addressLocality}, Australia`;
+          console.log("Full address for geocoding:", fullAddress);
+  
+          const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}`);
+          const geoData = await geoRes.json();
+  
+          if (geoData.length > 0) {
+            lat = parseFloat(geoData[0].lat);
+            lon = parseFloat(geoData[0].lon);
+            console.log(`Geocoded coordinates: lat=${lat}, lon=${lon}`);
+          } else {
+            console.warn("Geocoding returned no results");
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to parse or geocode address:", err);
+      }
+    }
+  
+    console.log(`Using coordinates: lat=${lat}, lon=${lon}`);
+  
+    try {
+      // Overpass API
+      const resOverpass = await fetch(`https://home-free-api.onrender.com/accessibility?lat=${lat}&lon=${lon}`);
+      const dataOverpass = await resOverpass.json();
+      const featuresFound = dataOverpass.accessible_features_found?.[0]?.tags?.total || 0;
+      const overpassScore = Math.min(10, Math.round((featuresFound / 200) * 10));
+  
+      // Mobility API
+      const resMobility = await fetch(`https://home-free-api.onrender.com/mobility`);
+      const dataMobility = await resMobility.json();
+      const toilets = dataMobility.mobility_data || [];
+      const accessibleToilets = toilets.filter(t => t.accessible?.toLowerCase() === "yes").length;
+      const mobilityScore = Math.min(10, Math.round((accessibleToilets / 100) * 10));
+  
+      // Debugging
+      console.log("→ Accessible features found:", featuresFound);
+      console.log("→ Overpass Score:", overpassScore);
+  
+      return Math.round((overpassScore + mobilityScore) / 2);
+    } catch (error) {
+      console.error("Failed to fetch neighborhood or mobility score:", error);
+      return 0;
+    }
+  };
+  
 
   const renderAccessibilityBars = (scores) => {
     const content = document.getElementById("homefree-content");
