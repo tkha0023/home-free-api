@@ -11,9 +11,9 @@
     let score = 0;
     let features = [];
 
-    if (textContent.includes("single-level") || textContent.includes("single storey") || textContent.includes("single story")) {
+    if (textContent.includes("single-level") || textContent.includes("single storey") || textContent.includes("single level") || textContent.includes("single story")) {
       score += 10;
-      features.push("Single-storey entry");
+      features.push("Single-storey");
     }
 
     const extraFeatures = {
@@ -96,28 +96,60 @@
   const renderAccessibilityBars = (scores) => {
     const content = document.getElementById("homefree-content");
     if (!content) return;
-
-    const makeBar = (label, percent) => `
-      <div style="margin-bottom: 12px;">
-        <div style="font-weight: bold; margin-bottom: 4px;">${label}</div>
-        <div style="background: #eee; border-radius: 6px; overflow: hidden; height: 10px;">
-          <div style="width: ${percent}%; background: #0077cc; height: 100%; transition: width 0.3s;"></div>
-        </div>
-      </div>
-    `;
-
+  
+    content.innerHTML = ""; // Clear previous content
+  
+    // Title
+    const title = document.createElement("div");
+    title.textContent = "Accessibility Breakdown";
+    title.style.fontSize = "16px";
+    title.style.fontWeight = "bold";
+    title.style.marginBottom = "10px";
+    content.appendChild(title);
+  
+    // Bar builder
+    const createBar = (label, percent) => {
+      const wrapper = document.createElement("div");
+      wrapper.style.marginBottom = "12px";
+  
+      const labelDiv = document.createElement("div");
+      labelDiv.textContent = label;
+      labelDiv.style.fontWeight = "bold";
+      labelDiv.style.marginBottom = "4px";
+  
+      const barContainer = document.createElement("div");
+      barContainer.style.background = "#eee";
+      barContainer.style.borderRadius = "6px";
+      barContainer.style.overflow = "hidden";
+      barContainer.style.height = "10px";
+  
+      const bar = document.createElement("div");
+      bar.style.width = `${percent}%`;
+      bar.style.background = "#0077cc";
+      bar.style.height = "100%";
+      bar.style.transition = "width 0.3s";
+  
+      barContainer.appendChild(bar);
+      wrapper.appendChild(labelDiv);
+      wrapper.appendChild(barContainer);
+      return wrapper;
+    };
+  
+    // Bars
+    content.appendChild(createBar("Property Accessibility", scores.property));
+    content.appendChild(createBar("Neighbourhood Accessibility", scores.hood));
+  
+    // Total Score
     const total = Math.round((scores.property + scores.hood) / 2);
-
-    content.innerHTML = `
-      <div style="font-size: 16px; font-weight: bold; margin-bottom: 10px;">Accessibility Breakdown</div>
-      ${makeBar("Property Accessibility", scores.property)}
-      ${makeBar("Neighbourhood Accessibility", scores.hood)}
-
-      <div style="margin-top: 16px; font-size: 18px; font-weight: bold; color: #0077cc;">
-        Total Score: ${total} / 10
-      </div>
-    `;
+    const totalScore = document.createElement("div");
+    totalScore.textContent = `Total Score: ${total} / 10`;
+    totalScore.style.marginTop = "16px";
+    totalScore.style.fontSize = "18px";
+    totalScore.style.fontWeight = "bold";
+    totalScore.style.color = "#0077cc";
+    content.appendChild(totalScore);
   };
+    
 
   const createPanel = (scores) => {
     const panel = document.createElement("div");
@@ -200,13 +232,36 @@
             if (tab === "overview") {
               renderAccessibilityBars(scores);
             } else {
-              content.innerHTML = `
-                <div><strong>Found Features:</strong><ul>
-                  ${scores.features.length
-                    ? scores.features.map(f => `<li>${f}</li>`).join("")
-                    : "<li>No features found</li>"}
-                </ul></div>
-              `;
+            // Clear existing content, updated for better security 
+            content.innerHTML = "";
+
+            // Create a wrapper div
+            const wrapper = document.createElement("div");
+
+            // Add heading
+            const heading = document.createElement("strong");
+            heading.innerText = "Found Features:";
+            wrapper.appendChild(heading);
+
+            // Create list
+            const ul = document.createElement("ul");
+
+            if (scores.features.length > 0) {
+              scores.features.forEach(feature => {
+                const li = document.createElement("li");
+                li.innerText = feature;
+                ul.appendChild(li);
+              });
+            } else {
+              const li = document.createElement("li");
+              li.innerText = "No features found";
+              ul.appendChild(li);
+            }
+
+            wrapper.appendChild(ul);
+            content.appendChild(wrapper);
+
+              
             }
             content.style.opacity = 1;
           }, 200);
