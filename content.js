@@ -7,138 +7,43 @@
   };
   const getPropertyScore = () => {
     const textContent = document.body.innerText.toLowerCase();
-    let score = 0;
-    let foundFeatures = [];
-  
-    const features = [
-      {
-        label: "Single-storey",
-        keywords: [
-          "single storey",
-          "single-storey",
-          "single story",
-          "single level",
-          "one level",
-          "no stairs",
-          "no internal stairs"
-        ]
-      },
-      {
-        label: "Step-free entry",
-        keywords: [
-          "step-free",
-          "step free",
-          "level access",
-          "no steps",
-          "ramp entry",
-          "accessible entry",
-          "wheelchair entry"
-        ]
-      },
-      {
-        label: "Wide doorways",
-        keywords: [
-          "wide doorway",
-          "wide doorways",
-          "wide doors",
-          "widened doors",
-          "door width",
-          "wheelchair door"
-        ]
-      },
-      {
-        label: "Elevator",
-        keywords: [
-          "elevator",
-          "lift",
-          "lift access",
-          "accessible lift",
-          "internal lift"
-        ]
-      },
-      {
-        label: "Roll-in shower",
-        keywords: [
-          "roll-in shower",
-          "roll in shower",
-          "curbless shower",
-          "walk-in shower",
-          "open shower",
-          "accessible shower",
-          "wet room"
-        ]
-      },
-      {
-        label: "Bathroom grab rails",
-        keywords: [
-          "grab rails",
-          "grab bars",
-          "hand rails",
-          "support rails",
-          "bathroom rails",
-          "safety rails",
-          "toilet rail"
-        ]
-      },
-      {
-        label: "Accessible parking",
-        keywords: [
-          "accessible parking",
-          "disabled parking",
-          "mobility parking",
-          "wide parking space",
-          "parking for disabled"
-        ]
-      },
-      {
-        label: "SDA-compliant",
-        keywords: [
-          "specialist disability accommodation",
-          "sda home",
-          "sda compliant",
-          "ndis approved",
-          "purpose-built disability home"
-        ]
-      },
-      {
-        label: "Accessible bathroom",
-        keywords: [
-          "accessible bathroom",
-          "step-free shower",
-          "hobless shower",
-          "curbless shower",
-          "roll-in shower"
-        ]
-      },
-      {
-        label: "Smart home accessibility",
-        keywords: [
-          "smart home accessibility",
-          "automated doors",
-          "voice-controlled",
-          "smart control"
-        ]
-      },
-      
 
-
-    ];
-    
   
-    for (const feature of features) {
-      for (const keyword of feature.keywords) {
-        if (textContent.includes(keyword)) {
-          foundFeatures.push(feature.label);
-          break;
-        }
-      }
+  
+  let scoreRaw = 0;
+  let foundFeatures = [];
+
+  //updated to use new scoring system
+const featureWeights = [
+  { label: "Step-free entry / single-storey", weight: 3.0, keywords: ["step-free", "step free", "level access", "no steps", "ramp entry", "accessible entry", "wheelchair entry", "single storey", "single-storey", "single story", "single level", "one level", "no stairs", "no internal stairs"] },
+  { label: "Wide doorways / hallways", weight: 2.0, keywords: ["wide doorway", "wide doorways", "wide doors", "widened doors", "door width", "wheelchair door"] },
+  { label: "Accessible bathroom (grab bars, etc.)", weight: 2.0, keywords: ["grab rails", "grab bars", "hand rails", "support rails", "bathroom rails", "safety rails", "toilet rail", "accessible bathroom"] },
+  { label: "Internal stairs with railing/elevator", weight: 1.5, keywords: ["elevator", "lift", "lift access", "accessible lift", "internal lift", "internal stairs", "staircase"] },
+  { label: "Lever handles / smart locks", weight: 0.5, keywords: ["lever handles", "lever door", "smart lock", "automated door", "voice-controlled", "smart control"] },
+  { label: "Non-slip or smooth flooring", weight: 0.5, keywords: ["non-slip", "slip resistant", "smooth flooring", "vinyl flooring", "laminate flooring"] },
+  { label: "Visual/auditory features", weight: 0.5, keywords: ["visual alarm", "auditory alert", "flashing light", "hearing loop", "doorbell light"] }
+];
+
+for (const feature of featureWeights) {
+  for (const keyword of feature.keywords) {
+    if (textContent.includes(keyword)) {
+      scoreRaw += feature.weight;
+      foundFeatures.push(feature.label);
+      break;
     }
-  
-    const scoreOutOfFive = Math.min(5, foundFeatures.length);
-    return {
-      property: scoreOutOfFive * 2,
-      features: foundFeatures
-    };
+  }
+}
+
+let clampedScore = Math.min(scoreRaw, 10);
+if (clampedScore <= 1.0 && foundFeatures.length <= 2) {
+  clampedScore = Math.min(clampedScore, 2); // or even 1
+}
+
+return {
+  property: Math.round(clampedScore),
+  features: [...new Set(foundFeatures)] 
+};
+
   };
   
 
@@ -170,9 +75,30 @@
             lon = parseFloat(geoData[0].lon);
             console.log(`Geocoded coordinates: lat=${lat}, lon=${lon}`);
           } else {
-            console.warn("Geocoding returned no results");
-            geocodingFailed = true;
+            console.warn("Full address geocoding returned no results. Trying suburb only...");
+          
+            if (data?.address?.addressLocality) {
+              const suburbOnly = `${data.address.addressLocality}, Australia`;
+              const retryRes = await fetch(
+                `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(suburbOnly)}`
+              );
+              const retryData = await retryRes.json();
+          
+              if (retryData.length > 0) {
+                lat = parseFloat(retryData[0].lat);
+                lon = parseFloat(retryData[0].lon);
+                console.log(`Fallback suburb geocoding succeeded: lat=${lat}, lon=${lon}`);
+                geocodingFailed = false;
+              } else {
+                console.warn("Fallback suburb geocoding also failed.");
+                geocodingFailed = true;
+              }
+            } else {
+              console.warn("No suburb found to use for fallback geocoding.");
+              geocodingFailed = true;
+            }
           }
+          
         } else {
           console.warn("Incomplete address in JSON-LD");
           geocodingFailed = true;
@@ -190,7 +116,6 @@
       return { hood: null, error: true };
     }
   
-    // continue with API calls...
   
     try {
       // Overpass API
