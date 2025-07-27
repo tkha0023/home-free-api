@@ -221,16 +221,19 @@ content.appendChild(hoodMessage);
   content.appendChild(createBar("Neighbourhood Accessibility", hoodPercent));
   }
 
-// Total Score
+// Total Score //safe variables now check to make sure they are a usable value
 const totalScore = document.createElement("div");
 if (scores.hoodError) {
   totalScore.textContent = `Total Score: ${scores.property} / 10`;
 } else {
   const safeProperty = typeof scores.property === 'number' ? scores.property : 0;
   const safeHood = typeof scores.hood === 'number' ? scores.hood : 0;
-  const total = Math.round((safeProperty + safeHood) / 2);
-  totalScore.textContent = `Total Score: ${total} / 10`;
+  const weightedTotal = Math.round((0.6 * safeProperty) + (0.4 * safeHood));
+  totalScore.textContent = `Total Score: ${weightedTotal} / 10`;
+  console.log(`→ Final Score (60/40 split): ${weightedTotal}`); // for debugging
+
 }
+
 totalScore.style.marginTop = "16px";
 totalScore.style.fontSize = "18px";
 totalScore.style.fontWeight = "bold";
