@@ -189,8 +189,9 @@ return {
   
   // Bars
    // Property Accessibility bar
-content.appendChild(createBar("Property Accessibility", scores.property * 20));
-
+   const propertyPercent = Math.min(100, (scores.property / 10) * 50);
+   content.appendChild(createBar("Property Accessibility", propertyPercent));
+   
 // Neighbourhood Accessibility
 if (scores.hoodError) {
   const hoodMessage = document.createElement("div");
