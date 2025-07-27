@@ -5,51 +5,164 @@
   const isListingPage = () => {
     return location.href.includes("realestate.com.au/property");
   };
-
   const getPropertyScore = () => {
     const textContent = document.body.innerText.toLowerCase();
     let score = 0;
-    let features = [];
+    let foundFeatures = [];
+  
+    const features = [
+      {
+        label: "Single-storey",
+        keywords: [
+          "single storey",
+          "single-storey",
+          "single story",
+          "single level",
+          "one level",
+          "no stairs",
+          "no internal stairs"
+        ]
+      },
+      {
+        label: "Step-free entry",
+        keywords: [
+          "step-free",
+          "step free",
+          "level access",
+          "no steps",
+          "ramp entry",
+          "accessible entry",
+          "wheelchair entry"
+        ]
+      },
+      {
+        label: "Wide doorways",
+        keywords: [
+          "wide doorway",
+          "wide doorways",
+          "wide doors",
+          "widened doors",
+          "door width",
+          "wheelchair door"
+        ]
+      },
+      {
+        label: "Elevator",
+        keywords: [
+          "elevator",
+          "lift",
+          "lift access",
+          "accessible lift",
+          "internal lift"
+        ]
+      },
+      {
+        label: "Roll-in shower",
+        keywords: [
+          "roll-in shower",
+          "roll in shower",
+          "curbless shower",
+          "walk-in shower",
+          "open shower",
+          "accessible shower",
+          "wet room"
+        ]
+      },
+      {
+        label: "Bathroom grab rails",
+        keywords: [
+          "grab rails",
+          "grab bars",
+          "hand rails",
+          "support rails",
+          "bathroom rails",
+          "safety rails",
+          "toilet rail"
+        ]
+      },
+      {
+        label: "Accessible parking",
+        keywords: [
+          "accessible parking",
+          "disabled parking",
+          "mobility parking",
+          "wide parking space",
+          "parking for disabled"
+        ]
+      },
+      {
+        label: "SDA-compliant",
+        keywords: [
+          "specialist disability accommodation",
+          "sda home",
+          "sda compliant",
+          "ndis approved",
+          "purpose-built disability home"
+        ]
+      },
+      {
+        label: "Accessible bathroom",
+        keywords: [
+          "accessible bathroom",
+          "step-free shower",
+          "hobless shower",
+          "curbless shower",
+          "roll-in shower"
+        ]
+      },
+      {
+        label: "Smart home accessibility",
+        keywords: [
+          "smart home accessibility",
+          "automated doors",
+          "voice-controlled",
+          "smart control"
+        ]
+      },
+      
 
-    if (textContent.includes("single-level") || textContent.includes("single storey") || textContent.includes("single level") || textContent.includes("single story")) {
-      score += 10;
-      features.push("Single-storey");
-    }
 
-    const extraFeatures = {
-      "Step-free entry": textContent.includes("step-free entry"),
-      "Wide doorways": textContent.includes("wide doorways"),
-      "Accessible bathroom": textContent.includes("accessible bathroom"),
-      "Roll-in shower": textContent.includes("roll-in shower"),
-      "Elevator": textContent.includes("elevator"),
-    };
-
-    for (const [label, found] of Object.entries(extraFeatures)) {
-      if (found) {
-        score += 2;
-        features.push(label);
+    ];
+    
+  
+    for (const feature of features) {
+      for (const keyword of feature.keywords) {
+        if (textContent.includes(keyword)) {
+          foundFeatures.push(feature.label);
+          break;
+        }
       }
     }
-
-    return { property: score, features };
+  
+    const scoreOutOfFive = Math.min(5, foundFeatures.length);
+    return {
+      property: scoreOutOfFive * 2,
+      features: foundFeatures
+    };
   };
+  
 
   const fetchHoodScore = async () => {
-    console.log(" fetchHoodScore() called");
+    console.log("fetchHoodScore() called");
   
-    let lat = -33.8688, lon = 151.2093; // default fallback we should consider better error handling for this at some point
+    let lat, lon;
+    let geocodingFailed = false;
   
     const jsonLdTag = document.querySelector('script[type="application/ld+json"]');
     if (jsonLdTag) {
       try {
         const parsed = JSON.parse(jsonLdTag.textContent);
-        const data = Array.isArray(parsed) ? parsed.find(obj => obj['@type'] === 'Residence') : parsed;
+        const data = Array.isArray(parsed)
+          ? parsed.find(obj => obj['@type'] === 'Residence')
+          : parsed;
   
         if (data?.address?.streetAddress && data?.address?.addressLocality) {
           const fullAddress = `${data.address.streetAddress}, ${data.address.addressLocality}, Australia`;
           console.log("Full address for geocoding:", fullAddress);
   
-          const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}`);
+          const geoRes = await fetch(
+            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}`
+          );
           const geoData = await geoRes.json();
   
           if (geoData.length > 0) {
@@ -58,14 +171,26 @@
             console.log(`Geocoded coordinates: lat=${lat}, lon=${lon}`);
           } else {
             console.warn("Geocoding returned no results");
+            geocodingFailed = true;
           }
+        } else {
+          console.warn("Incomplete address in JSON-LD");
+          geocodingFailed = true;
         }
       } catch (err) {
-        console.warn("Failed to parse or geocode address:", err);
+        console.warn("Geocoding error:", err);
+        geocodingFailed = true;
       }
+    } else {
+      geocodingFailed = true;
     }
   
-    console.log(`Using coordinates: lat=${lat}, lon=${lon}`);
+    if (geocodingFailed || lat == null || lon == null) {
+      console.warn("Geocoding failed completely — skipping hood score");
+      return { hood: null, error: true };
+    }
+  
+    // continue with API calls...
   
     try {
       // Overpass API
@@ -85,10 +210,12 @@
       console.log("→ Accessible features found:", featuresFound);
       console.log("→ Overpass Score:", overpassScore);
   
-      return Math.round((overpassScore + mobilityScore) / 2);
-    } catch (error) {
+      const hoodScore = Math.round((overpassScore + mobilityScore) / 2);
+      return { hood: hoodScore, error: false };
+          } catch (error) {
       console.error("Failed to fetch neighborhood or mobility score:", error);
-      return 0;
+      return { hood: null, error: true };
+
     }
   };
   
@@ -125,7 +252,7 @@
   
       const bar = document.createElement("div");
       bar.style.width = `${percent}%`;
-      bar.style.background = "#0077cc";
+      bar.style.background = "#005999";
       bar.style.height = "100%";
       bar.style.transition = "width 0.3s";
   
@@ -135,20 +262,56 @@
       return wrapper;
     };
   
-    // Bars
-    content.appendChild(createBar("Property Accessibility", scores.property));
-    content.appendChild(createBar("Neighbourhood Accessibility", scores.hood));
-  
-    // Total Score
-    const total = Math.round((scores.property + scores.hood) / 2);
-    const totalScore = document.createElement("div");
-    totalScore.textContent = `Total Score: ${total} / 10`;
-    totalScore.style.marginTop = "16px";
-    totalScore.style.fontSize = "18px";
-    totalScore.style.fontWeight = "bold";
-    totalScore.style.color = "#0077cc";
-    content.appendChild(totalScore);
-  };
+  // Bars
+   // Property Accessibility bar
+content.appendChild(createBar("Property Accessibility", scores.property * 20));
+
+// Neighbourhood Accessibility
+if (scores.hoodError) {
+  const hoodMessage = document.createElement("div");
+hoodMessage.style.display = "flex";
+hoodMessage.style.alignItems = "center";
+hoodMessage.style.gap = "8px";
+hoodMessage.style.color = "#A80000";
+hoodMessage.style.fontSize = "15px";
+hoodMessage.style.fontWeight = "bold";
+hoodMessage.style.marginBottom = "12px";
+
+// Icon
+const exclamation = document.createElement("span");
+exclamation.textContent = "❗"; // Unicode red exclamation
+exclamation.style.fontSize = "18px";
+
+// Text
+const message = document.createElement("span");
+message.textContent = "Neighbourhood data unavailable for this property";
+
+hoodMessage.appendChild(exclamation);
+hoodMessage.appendChild(message);
+content.appendChild(hoodMessage);
+
+} else {
+  const hoodPercent = Math.min(100, Math.max(0, scores.hood * 10));
+  content.appendChild(createBar("Neighbourhood Accessibility", hoodPercent));
+  }
+
+// Total Score
+const totalScore = document.createElement("div");
+if (scores.hoodError) {
+  totalScore.textContent = `Total Score: ${scores.property} / 10`;
+} else {
+  const safeProperty = typeof scores.property === 'number' ? scores.property : 0;
+  const safeHood = typeof scores.hood === 'number' ? scores.hood : 0;
+  const total = Math.round((safeProperty + safeHood) / 2);
+  totalScore.textContent = `Total Score: ${total} / 10`;
+}
+totalScore.style.marginTop = "16px";
+totalScore.style.fontSize = "18px";
+totalScore.style.fontWeight = "bold";
+totalScore.style.color = "#005999";
+content.appendChild(totalScore);
+  }
+
     
 
   const createPanel = (scores) => {
@@ -161,7 +324,7 @@
       width: 280px;
       background: white;
       border-radius: 16px;
-      border: 2px solid #0077cc;
+      border: 2px solid #005999;
       box-shadow: 0 6px 16px rgba(0, 119, 204, 0.2);
       font-family: 'Segoe UI', sans-serif;
       z-index: 9999;
@@ -172,7 +335,7 @@
     panel.innerHTML = `
       <div id="homefree-header" style="display: flex; align-items: center; gap: 10px; padding: 12px; cursor: pointer;">
         <img id="homefree-logo" src="${logoPath}" alt="HomeFree Logo" style="width: 40px; height: 40px; border-radius: 8px;" />
-        <div id="homefree-title" style="font-size: 18px; font-weight: bold; color: #0077cc;">HomeFree</div>
+        <div id="homefree-title" style="font-size: 18px; font-weight: bold; color: #005999;">HomeFree</div>
       </div>
 
       <div id="homefree-main">
@@ -185,8 +348,8 @@
             overflow: hidden;
             cursor: pointer;
           ">
-            <div data-tab="overview" style="flex: 1; padding: 8px; text-align: center; background: #0077cc; color: white;">Overview</div>
-            <div data-tab="features" style="flex: 1; padding: 8px; text-align: center; color: #0077cc;">Features</div>
+            <div data-tab="overview" style="flex: 1; padding: 8px; text-align: center; background: #005999; color: white;">Overview</div>
+            <div data-tab="features" style="flex: 1; padding: 8px; text-align: center; color: #005999;">Features</div>
           </div>
         </div>
 
@@ -222,9 +385,9 @@
 
           toggle.querySelectorAll("div").forEach(el => {
             el.style.background = "#f0f0f0";
-            el.style.color = "#0077cc";
+            el.style.color = "#005999";
           });
-          btn.style.background = "#0077cc";
+          btn.style.background = "#005999";
           btn.style.color = "white";
 
           content.style.opacity = 0;
@@ -275,14 +438,24 @@
   const scanPage = async () => {
     if (isListingPage()) {
       console.log("Listing page detected, injecting panel.");
+      
       const property = getPropertyScore();
-      const hood = await fetchHoodScore();
-      createPanel({ ...property, hood });
+      const hoodResult = await fetchHoodScore();
+      
+      const scores = {
+        ...property,
+        hood: hoodResult.hood,
+        hoodError: hoodResult.error
+      };
+      
+      createPanel(scores);
+  
     } else {
       console.log("Not a listing page, removing panel.");
       document.getElementById("homefree-panel")?.remove();
     }
   };
+  
 
   const observeUrlChanges = () => {
     const observer = new MutationObserver(() => {
