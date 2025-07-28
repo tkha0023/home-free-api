@@ -13,16 +13,69 @@
   let scoreRaw = 0;
   let foundFeatures = [];
 
-  //updated to use new scoring system
-const featureWeights = [
-  { label: "Step-free entry / single-storey", weight: 3.0, keywords: ["step-free", "step free", "level access", "no steps", "ramp entry", "accessible entry", "wheelchair entry", "single storey", "single-storey", "single story", "single level", "one level", "no stairs", "no internal stairs"] },
-  { label: "Wide doorways / hallways", weight: 2.0, keywords: ["wide doorway", "wide doorways", "wide doors", "widened doors", "door width", "wheelchair door"] },
-  { label: "Accessible bathroom (grab bars, etc.)", weight: 2.0, keywords: ["grab rails", "grab bars", "hand rails", "support rails", "bathroom rails", "safety rails", "toilet rail", "accessible bathroom"] },
-  { label: "Internal stairs with railing/elevator", weight: 1.5, keywords: ["elevator", "lift", "lift access", "accessible lift", "internal lift", "internal stairs", "staircase"] },
-  { label: "Lever handles / smart locks", weight: 0.5, keywords: ["lever handles", "lever door", "smart lock", "automated door", "voice-controlled", "smart control"] },
-  { label: "Non-slip or smooth flooring", weight: 0.5, keywords: ["non-slip", "slip resistant", "smooth flooring", "vinyl flooring", "laminate flooring"] },
-  { label: "Visual/auditory features", weight: 0.5, keywords: ["visual alarm", "auditory alert", "flashing light", "hearing loop", "doorbell light"] }
-];
+  //updated to include more keywords
+  const featureWeights = [
+    {
+      label: "Step-free entry / single-storey",
+      weight: 3.0,
+      keywords: [
+        "step-free", "step free", "no steps", "no stairs", "no internal stairs",
+        "level access", "ramp entry", "ramp access", "flat entry", 
+        "single storey", "single-storey", "single story", "single level", "one level",
+        "accessible entry", "wheelchair access", "accessible entrance"
+      ]
+    },
+    {
+      label: "Wide doorways / hallways",
+      weight: 2.0,
+      keywords: [
+        "wide doorway", "wide doorways", "wide doors", "door width", "extra wide doors",
+        "widened doors", "wide hallways", "hallway width", "wheelchair door"
+      ]
+    },
+    {
+      label: "Accessible bathroom (grab bars, etc.)",
+      weight: 2.0,
+      keywords: [
+        "grab rails", "grab bars", "hand rails", "support rails",
+        "safety rails", "bathroom rails", "toilet rail", 
+        "accessible bathroom", "accessible ensuite", "disabled bathroom", "roll-in shower", "walk-in shower"
+      ]
+    },
+    {
+      label: "Internal stairs with railing/elevator",
+      weight: 1.5,
+      keywords: [
+        "elevator", "lift", "lift access", "internal lift", "staircase with railing",
+        "accessible lift", "stairs with handrails", "internal stairs", "stairlift"
+      ]
+    },
+    {
+      label: "Lever handles / smart locks",
+      weight: 0.5,
+      keywords: [
+        "lever handles", "lever door", "lever tap", "smart lock", "automated lock",
+        "voice-controlled", "smart home", "electronic lock", "digital door lock"
+      ]
+    },
+    {
+      label: "Non-slip or smooth flooring",
+      weight: 0.5,
+      keywords: [
+        "non-slip", "anti-slip", "slip resistant", "smooth flooring", "vinyl flooring",
+        "laminate flooring", "timber flooring", "accessible flooring", "low-slip tiles"
+      ]
+    },
+    {
+      label: "Visual/auditory features",
+      weight: 0.5,
+      keywords: [
+        "visual alarm", "flashing light", "hearing loop", "doorbell light", 
+        "auditory alert", "tactile indicators", "visual cues", "door alert light"
+      ]
+    }
+  ];
+  
 
 for (const feature of featureWeights) {
   for (const keyword of feature.keywords) {
