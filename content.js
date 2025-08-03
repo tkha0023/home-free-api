@@ -172,7 +172,11 @@ return {
   
     try {
       // Overpass API
-      const resOverpass = await fetch(`https://home-free-api.onrender.com/accessibility?lat=${lat}&lon=${lon}`);
+      const resOverpass = await fetch(`https://home-free-api.onrender.com/accessibility?lat=${lat}&lon=${lon}`, {
+        headers: {
+          'User-Agent': 'HomeFreeExtension/1.0'
+        }
+      });
       const dataOverpass = await resOverpass.json();
       const featuresFound = dataOverpass.accessible_features_found?.[0]?.tags?.total || 0;
       const overpassScore = Math.min(10, Math.round((featuresFound / 200) * 10));

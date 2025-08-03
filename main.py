@@ -1,12 +1,3 @@
-"""
-This is a FastAPI application that provides endpoints for accessing various datasets related to accessibility and mobility in Melbourne, Australia.
-
-To run this application, you need to install the required dependencies using pip:
-pip install fastapi
-pip install uvicorn
-pip install httpx
-"""
-
 # Import necessary modules from FastAPI and httpx (an HTTP client for making API requests)
 from fastapi import FastAPI, Query
 import httpx
@@ -20,7 +11,7 @@ app = FastAPI()
 # Add CORS middleware to allow requests from any origin
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["https://www.realestate.com.au"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -106,7 +97,21 @@ async def get_accessibility(lat: float = Query(...), lon: float = Query(...)):
     data = res.json()
 
     # Return the list of accessible elements found
-    return {"accessible_features_found": data.get('elements', [])}
+# Construct a consistent response structure
+    return {
+        "accessible_features_found": [
+            {
+                "type": "count",
+                "id": 0,
+                "tags": {
+                    "nodes": str(data.get("nodes", 0)),
+                    "ways": str(data.get("ways", 0)),
+                    "relations": str(data.get("relations", 0)),
+                    "total": str(len(data.get('elements', [])))
+                }
+            }
+        ]
+    }
 
 
 # --------------------------------------------------------------------
