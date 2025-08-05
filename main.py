@@ -151,8 +151,16 @@ async def get_building_accessibility(lat: float, lon: float):
     async with httpx.AsyncClient() as client:
         response = await client.get(url)
         data = response.json()  # Convert response into Python dictionary
-    print(data["results"][:3])  # 🧪 TEMP: Print 3 buildings to debug
 
+    # Get the results safely
+    results = data.get("results", [])
+
+    # Print total number of buildings returned
+    print("🔍 Total building records returned:", len(results))
+
+    # Only print the first entry if it exists
+    if results:
+        print("🔍 First building record:", results[0])
 
     # Define a function to calculate distance (in meters) between two lat/lon points using the Haversine formula
     def haversine(lat1, lon1, lat2, lon2):
@@ -168,30 +176,26 @@ async def get_building_accessibility(lat: float, lon: float):
     # Store the closest building found so far and the shortest distance
     closest = None
     min_distance = 200  # Only consider buildings within 200 meters
-    print("Sample building entry:", data["results"][0])
 
-    for building in data.get("results", []):
-        print("🔍 First building record:", data["results"][0])
-        # Convert lat/lon to float, and skip if not valid
+    # Loop through the dataset
+    for building in results:
+        # Convert coordinates to float and skip if invalid
         try:
             b_lat = float(building.get("latitude"))
             b_lon = float(building.get("longitude"))
         except (TypeError, ValueError):
             continue
 
-        # Calculate distance using the haversine formula
+        # Calculate distance from given point
         distance = haversine(lat, lon, b_lat, b_lon)
 
-        # If this building is within 200 meters and closest so far, store it
+        # Save the closest valid building within range
         if distance <= min_distance:
             min_distance = distance
             closest = building
 
-
-    # After the loop, check if we found a building nearby
+    # If a closed building is found, return its accessibility rating
     if closest and "accessibility_rating" in closest:
-        # Return the accessibility_rating as an integer (0, 1, 2, or 3)
         return {"accessibility_rating": int(closest["accessibility_rating"])}
     else:
-        # If no suitable building is found nearby, return null
         return {"accessibility_rating": None}
