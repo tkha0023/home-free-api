@@ -137,10 +137,11 @@ async def get_mobility():
 
 
 # Import necessary tools
-from fastapi import Request  # Not directly used here but kept in case needed for future middleware/context
+from fastapi import Request  # Not directly used here, but kept in case needed for future middleware/context
 from typing import Optional
 import math  # Used for distance calculation with haversine formula
 
+'''
 # Create a new GET route: /buildings?lat=...&lon=...
 @app.get("/buildings")
 async def get_building_accessibility(lat: float, lon: float):
@@ -199,3 +200,4 @@ async def get_building_accessibility(lat: float, lon: float):
         return {"accessibility_rating": int(closest["accessibility_rating"])}
     else:
         return {"accessibility_rating": None}
+'''
