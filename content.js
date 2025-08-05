@@ -415,6 +415,27 @@ content.appendChild(totalScore);
     });
 
     renderAccessibilityBars(scores);
+
+    // Create the Download PDF button
+    const pdfButton = document.createElement("button");
+    pdfButton.innerText = "Download PDF Report";
+    pdfButton.style.marginTop = "12px";
+    pdfButton.style.padding = "8px 12px";
+    pdfButton.style.fontSize = "14px";
+    pdfButton.style.backgroundColor = "#005999";
+    pdfButton.style.color = "white";
+    pdfButton.style.border = "none";
+    pdfButton.style.borderRadius = "6px";
+    pdfButton.style.cursor = "pointer";
+  
+    // When clicked, run the PDF generation function
+    pdfButton.addEventListener("click", () => {
+      alert("This will generate a PDF soon!");
+    });
+  
+    // Add the button to the panel
+    panel.appendChild(pdfButton);
+
   };
 
   const scanPage = async () => {
