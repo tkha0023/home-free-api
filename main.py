@@ -134,4 +134,61 @@ async def get_mobility():
 
     # If the request was successful, return the mobility data
     return {"mobility_data": res.json()}
-    
+
+
+# Import necessary tools
+from fastapi import Request  # Not directly used here, but kept in case needed for future middleware/context
+from typing import Optional
+import math  # Used for distance calculation with haversine formula
+
+# Create a new GET route: /buildings?lat=...&lon=...
+@app.get("/buildings")
+async def get_building_accessibility(lat: float, lon: float):
+    # This is the public dataset URL for Melbourne buildings (limited to 500 results per call)
+    url = "https://data.melbourne.vic.gov.au/api/explore/v2.1/catalog/datasets/buildings-with-name-age-size-accessibility-and-bicycle-facilities/records?limit=500"
+
+    # Use httpx to fetch the dataset asynchronously
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url)
+        data = response.json()  # Convert response into Python dictionary
+
+    # Define a function to calculate distance (in meters) between two lat/lon points using the Haversine formula
+    def haversine(lat1, lon1, lat2, lon2):
+        R = 6371000  # Radius of Earth in meters
+        phi1 = math.radians(lat1)
+        phi2 = math.radians(lat2)
+        delta_phi = math.radians(lat2 - lat1)
+        delta_lambda = math.radians(lon2 - lon1)
+        a = math.sin(delta_phi / 2)**2 + math.cos(phi1) * math.cos(phi2) * math.sin(delta_lambda / 2)**2
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+        return R * c  # Distance in meters
+
+    # Store the closest building found so far and the shortest distance
+    closest = None
+    min_distance = 100  # Only consider buildings within 100 meters
+
+    # Loop through every building record from the dataset
+    for building in data.get("results", []):
+        # Extract the building's latitude and longitude
+        b_lat = building.get("latitude")
+        b_lon = building.get("longitude")
+
+        # Skip any building that doesn’t have coordinates
+        if b_lat is None or b_lon is None:
+            continue
+
+        # Calculate distance from the input coordinates to the building
+        distance = haversine(lat, lon, b_lat, b_lon)
+
+        # If it's closer than the minimum distance so far, save it
+        if distance <= min_distance:
+            min_distance = distance
+            closest = building
+
+    # After the loop, check if we found a building nearby
+    if closest and "accessibility_rating" in closest:
+        # Return the accessibility_rating as an integer (0, 1, 2, or 3)
+        return {"accessibility_rating": int(closest["accessibility_rating"])}
+    else:
+        # If no suitable building is found nearby, return null
+        return {"accessibility_rating": None}
