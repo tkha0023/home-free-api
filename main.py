@@ -151,6 +151,8 @@ async def get_building_accessibility(lat: float, lon: float):
     async with httpx.AsyncClient() as client:
         response = await client.get(url)
         data = response.json()  # Convert response into Python dictionary
+    print(data["results"][:3])  # 🧪 TEMP: Print 3 buildings to debug
+
 
     # Define a function to calculate distance (in meters) between two lat/lon points using the Haversine formula
     def haversine(lat1, lon1, lat2, lon2):
@@ -166,8 +168,10 @@ async def get_building_accessibility(lat: float, lon: float):
     # Store the closest building found so far and the shortest distance
     closest = None
     min_distance = 200  # Only consider buildings within 200 meters
+    print("Sample building entry:", data["results"][0])
 
     for building in data.get("results", []):
+        print("🔍 First building record:", data["results"][0])
         # Convert lat/lon to float, and skip if not valid
         try:
             b_lat = float(building.get("latitude"))
@@ -189,5 +193,5 @@ async def get_building_accessibility(lat: float, lon: float):
         # Return the accessibility_rating as an integer (0, 1, 2, or 3)
         return {"accessibility_rating": int(closest["accessibility_rating"])}
     else:
-        # If no suitable building found nearby, return null
+        # If no suitable building is found nearby, return null
         return {"accessibility_rating": None}
