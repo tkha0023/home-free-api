@@ -149,7 +149,7 @@ async def get_building_accessibility(lat: float, lon: float):
 
     # Use httpx to fetch the dataset asynchronously
     async with httpx.AsyncClient() as client:
-        response = await client.get(url)
+        response = await client.get(url, headers={"Accept": "application/json"})
         data = response.json()  # Convert response into Python dictionary
 
     # Get the results safely
