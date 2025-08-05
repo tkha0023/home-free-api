@@ -2,18 +2,19 @@
   "manifest_version": 3,
   "name": "Home Free Accessibility Extension",
   "version": "1.0",
-
-"description": "Displays accessibility and mobility info for properties on realestate.com.au.",
+  "description": "Shows accessibility score on real estate listings.",
   "host_permissions": [
     "*://*.realestate.com.au/*",
-    "https://home-free-api.onrender.com/*"
+    "https://home-free-api.onrender.com/*",
+    "*://*.domain.com.au/*" //not used yet, just for future use//
   ],
   "content_scripts": [
     {
       "matches": [
-        "*://*.realestate.com.au/*"
+        "*://*.realestate.com.au/*",
+        "*://*.domain.com.au/*"
       ],
-      "js": ["content.js"]
+      "js": ["jsPDF.umd.min.js","content.js"]
     }
   ],
   "web_accessible_resources": [

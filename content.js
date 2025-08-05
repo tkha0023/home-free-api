@@ -172,11 +172,7 @@ return {
   
     try {
       // Overpass API
-      const resOverpass = await fetch(`https://home-free-api.onrender.com/accessibility?lat=${lat}&lon=${lon}`, {
-        headers: {
-          'User-Agent': 'HomeFreeExtension/1.0'
-        }
-      });
+      const resOverpass = await fetch(`https://home-free-api.onrender.com/accessibility?lat=${lat}&lon=${lon}`);
       const dataOverpass = await resOverpass.json();
       const featuresFound = dataOverpass.accessible_features_found?.[0]?.tags?.total || 0;
       const overpassScore = Math.min(10, Math.round((featuresFound / 200) * 10));
@@ -419,6 +415,61 @@ content.appendChild(totalScore);
     });
 
     renderAccessibilityBars(scores);
+
+    // Create the Download PDF button
+    const pdfButton = document.createElement("button");
+    pdfButton.innerText = "Download PDF Report";
+    pdfButton.style.marginTop = "12px";
+    pdfButton.style.padding = "8px 12px";
+    pdfButton.style.fontSize = "14px";
+    pdfButton.style.backgroundColor = "#005999";
+    pdfButton.style.color = "white";
+    pdfButton.style.border = "none";
+    pdfButton.style.borderRadius = "6px";
+    pdfButton.style.cursor = "pointer";
+  
+    // When clicked, run the PDF generation function
+    pdfButton.addEventListener("click", async () => {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+  
+    // Title
+    doc.setFontSize(18);
+    doc.text("Home Free Accessibility Report", 20, 20);
+  
+    // URL
+    doc.setFontSize(12);
+    doc.text(`Property URL: ${window.location.href}`, 20, 30);
+  
+    // Scores
+    doc.text(`Property Score: ${scores.property}/10`, 20, 40);
+    if (!scores.hoodError) {
+      doc.text(`Neighbourhood Score: ${scores.hood}/10`, 20, 50);
+      const totalScore = Math.round((0.6 * scores.property) + (0.4 * scores.hood));
+      doc.text(`Total Score: ${totalScore}/10`, 20, 60);
+    } else {
+      doc.text("Neighbourhood Score: Not Available", 20, 50);
+      doc.text(`Total Score: ${scores.property}/10`, 20, 60);
+    }
+  
+    // Features
+    doc.text("Accessibility Features Found:", 20, 80);
+    if (scores.features.length > 0) {
+      scores.features.forEach((feature, index) => {
+        doc.text(`- ${feature}`, 25, 90 + index * 10);
+      });
+    } else {
+      doc.text("- No features detected", 25, 90);
+    }
+  
+    // Save file
+    doc.save("home-free-accessibility-report.pdf");
+  });
+
+  
+    // Add the button to the panel
+    panel.appendChild(pdfButton);
+
   };
 
   const scanPage = async () => {
