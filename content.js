@@ -11,7 +11,7 @@
   
   
   let scoreRaw = 0;
-  let foundFeatures = [];
+  let foundFeatures = new Set(); // Updated to use Set to avoid duplicates
 
   //updated to include more keywords
   const featureWeights = [
@@ -81,20 +81,20 @@ for (const feature of featureWeights) {
   for (const keyword of feature.keywords) {
     if (textContent.includes(keyword)) {
       scoreRaw += feature.weight;
-      foundFeatures.push(feature.label);
+      foundFeatures.add(feature.label);
       break;
     }
   }
 }
 
 let clampedScore = Math.min(scoreRaw, 10);
-if (clampedScore <= 1.0 && foundFeatures.length <= 2) {
+if (clampedScore <= 1.0 && foundFeatures.size <= 2) {
   clampedScore = Math.min(clampedScore, 2); // or even 1
 }
 
 return {
   property: Math.round(clampedScore),
-  features: [...new Set(foundFeatures)] 
+  features: Array.from(foundFeatures) 
 };
 
   };
