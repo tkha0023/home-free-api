@@ -376,6 +376,17 @@ content.appendChild(totalScore);
       panel.style.width = isCollapsed ? "60px" : "280px";
       title.style.display = isCollapsed ? "none" : "block";
       main.style.display = isCollapsed ? "none" : "block";
+
+      // Collapse/expand PDF button
+      if (isCollapsed) {
+        pdfText.textContent = "PDF";
+        pdfButton.style.width = "auto";
+        pdfButton.style.padding = "3.6px";
+      } else {
+        pdfText.textContent = "Download PDF Report";
+        pdfButton.style.width = "auto";
+        pdfButton.style.padding = "8px 12px";
+      }
     });
 
     let currentTab = "overview";
@@ -439,7 +450,6 @@ content.appendChild(totalScore);
 
     // Create the Download PDF button
     const pdfButton = document.createElement("button");
-    pdfButton.innerText = "Download PDF Report";
     pdfButton.style.marginTop = "12px";
     pdfButton.style.padding = "8px 12px";
     pdfButton.style.fontSize = "14px";
@@ -448,6 +458,25 @@ content.appendChild(totalScore);
     pdfButton.style.border = "none";
     pdfButton.style.borderRadius = "6px";
     pdfButton.style.cursor = "pointer";
+    pdfButton.style.display = "flex";
+    pdfButton.style.alignItems = "center";
+    pdfButton.style.gap = "6px";
+
+    // Icon for collapsed mode
+    const pdfIcon = document.createElement("span");
+    pdfIcon.textContent = "📄"; // PDF icon
+    pdfIcon.style.fontSize = "14px";
+
+    // Text (full button text in expanded mode)
+    const pdfText = document.createElement("span");
+    pdfText.textContent = "Download PDF Report";
+
+    pdfButton.appendChild(pdfIcon);
+    pdfButton.appendChild(pdfText);
+
+
+
+
   
     // When clicked, run the PDF generation function
     pdfButton.addEventListener("click", async () => {
