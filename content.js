@@ -101,73 +101,94 @@ return {
   
 
   const fetchHoodScore = async () => {
-    console.log("fetchHoodScore() called");
-  
-    let lat, lon;
-    let geocodingFailed = false;
-  
-    const jsonLdTag = document.querySelector('script[type="application/ld+json"]');
-    if (jsonLdTag) {
-      try {
-        const parsed = JSON.parse(jsonLdTag.textContent);
-        const data = Array.isArray(parsed)
-          ? parsed.find(obj => obj['@type'] === 'Residence')
-          : parsed;
-  
-        if (data?.address?.streetAddress && data?.address?.addressLocality) {
-          const fullAddress = `${data.address.streetAddress}, ${data.address.addressLocality}, Australia`;
-          console.log("Full address for geocoding:", fullAddress);
-  
-          const geoRes = await fetch(
-            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}`
-          );
-          const geoData = await geoRes.json();
-  
-          if (geoData.length > 0) {
-            lat = parseFloat(geoData[0].lat);
-            lon = parseFloat(geoData[0].lon);
-            console.log(`Geocoded coordinates: lat=${lat}, lon=${lon}`);
-          } else {
-            console.warn("Full address geocoding returned no results. Trying suburb only...");
-          
-            if (data?.address?.addressLocality) {
-              const suburbOnly = `${data.address.addressLocality}, Australia`;
-              const retryRes = await fetch(
-                `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(suburbOnly)}`
-              );
-              const retryData = await retryRes.json();
-          
-              if (retryData.length > 0) {
-                lat = parseFloat(retryData[0].lat);
-                lon = parseFloat(retryData[0].lon);
-                console.log(`Fallback suburb geocoding succeeded: lat=${lat}, lon=${lon}`);
-                geocodingFailed = false;
+  console.log("fetchHoodScore() called");
+
+  let lat, lon;
+  let geocodingFailed = false;
+
+  const jsonLdTag = document.querySelector('script[type="application/ld+json"]');
+  if (jsonLdTag) {
+    try {
+      const parsed = JSON.parse(jsonLdTag.textContent);
+      const data = Array.isArray(parsed)
+        ? parsed.find(obj => obj['@type'] === 'Residence')
+        : parsed;
+
+      if (data?.address?.streetAddress && data?.address?.addressLocality) {
+        const fullAddress = `${data.address.streetAddress}, ${data.address.addressLocality}, Australia`;
+        console.log("Full address for geocoding:", fullAddress);
+
+        const geoRes = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}`
+        );
+        const geoData = await geoRes.json();
+
+        if (geoData.length > 0) {
+          lat = parseFloat(geoData[0].lat);
+          lon = parseFloat(geoData[0].lon);
+          console.log(`Geocoded coordinates: lat=${lat}, lon=${lon}`);
+        } else {
+          console.warn("Full address geocoding returned no results. Trying suburb only...");
+
+          if (data?.address?.addressLocality) {
+            const suburbOnly = `${data.address.addressLocality}, Australia`;
+            const retryRes = await fetch(
+              `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(suburbOnly)}`
+            );
+            const retryData = await retryRes.json();
+
+            if (retryData.length > 0) {
+              lat = parseFloat(retryData[0].lat);
+              lon = parseFloat(retryData[0].lon);
+              console.log(`Fallback suburb geocoding succeeded: lat=${lat}, lon=${lon}`);
+              geocodingFailed = false;
+            } else {
+              console.warn("Fallback suburb geocoding also failed. Trying postcode fallback...");
+              
+              // New postcode fallback
+              if (data?.address?.postalCode) {
+                const postcodeQuery = `${data.address.postalCode}, Australia`;
+                const postcodeRes = await fetch(
+                  `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(postcodeQuery)}`
+                );
+                const postcodeData = await postcodeRes.json();
+
+                if (postcodeData.length > 0) {
+                  lat = parseFloat(postcodeData[0].lat);
+                  lon = parseFloat(postcodeData[0].lon);
+                  console.log(`Postcode fallback succeeded: lat=${lat}, lon=${lon}`);
+                  geocodingFailed = false;
+                } else {
+                  console.warn("Postcode fallback also failed.");
+                  geocodingFailed = true;
+                }
               } else {
-                console.warn("Fallback suburb geocoding also failed.");
+                console.warn("No postcode found for fallback geocoding.");
                 geocodingFailed = true;
               }
-            } else {
-              console.warn("No suburb found to use for fallback geocoding.");
-              geocodingFailed = true;
             }
+          } else {
+            console.warn("No suburb found to use for fallback geocoding.");
+            geocodingFailed = true;
           }
-          
-        } else {
-          console.warn("Incomplete address in JSON-LD");
-          geocodingFailed = true;
         }
-      } catch (err) {
-        console.warn("Geocoding error:", err);
+
+      } else {
+        console.warn("Incomplete address in JSON-LD");
         geocodingFailed = true;
       }
-    } else {
+    } catch (err) {
+      console.warn("Geocoding error:", err);
       geocodingFailed = true;
     }
-  
-    if (geocodingFailed || lat == null || lon == null) {
-      console.warn("Geocoding failed completely — skipping hood score");
-      return { hood: null, error: true };
-    }
+  } else {
+    geocodingFailed = true;
+  }
+
+  if (geocodingFailed || lat == null || lon == null) {
+    console.warn("Geocoding failed completely — skipping hood score");
+    return { hood: null, error: true };
+  }
   
   
     try {
