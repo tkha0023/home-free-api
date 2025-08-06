@@ -7,7 +7,7 @@
 - **Property Accessibility Score**  
   Analyzes keywords in the property description (e.g., step-free entry, wide doorways, grab rails) and generates a score out of 10.
 
--  **Neighbourhood Accessibility Score**  
+- **Neighbourhood Accessibility Score**  
   Fetches OpenStreetMap and open data (via backend API) to assess nearby accessible toilets, ramps, terrain, and transit access.
 
 - **Visual Breakdown**  
@@ -47,7 +47,11 @@ See `main.py` for implementation.
 2. Load the `extension/` folder into Chrome via `chrome://extensions > Load Unpacked`.
 3. Visit a listing on realestate.com.au to test.
 
+Alternatively, you can also install the extension directly from the Google Chrome Web Store.
 
+## License
+
+This project is licensed under the MIT License
 
 ---
 
