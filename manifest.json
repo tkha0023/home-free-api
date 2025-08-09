@@ -6,7 +6,7 @@
   "host_permissions": [
     "*://*.realestate.com.au/*",
     "https://home-free-api.onrender.com/*",
-    "*://*.domain.com.au/*" //not used yet, just for future use//
+    "*://*.domain.com.au/*"
   ],
   "content_scripts": [
     {
@@ -19,7 +19,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["logo.png"],
+      "resources": ["logo.png", "print.html", "print.js"],
       "matches": ["*://*.realestate.com.au/*"]
 
     }

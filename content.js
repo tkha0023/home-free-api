@@ -475,139 +475,70 @@ content.appendChild(totalScore);
     pdfButton.appendChild(pdfText);
 
 
-
-
-  
-    // Small helper that returns a full HTML document for printing
-    function buildPrintableReport(scores) {
-      const totalText = scores.hoodError
-        ? `${scores.property}/10`
-        : `${Math.round(0.6 * scores.property + 0.4 * scores.hood)}/10`;
-    
-      const propertyPercent = Math.min(100, (scores.property / 10) * 50);
-      const hoodPercent = scores.hoodError ? 0 : Math.min(100, Math.max(0, scores.hood * 10));
-    
-      const featuresHtml = (scores.features && scores.features.length)
-        ? scores.features.map(f => `<li>${f}</li>`).join("")
-        : `<li>No features detected</li>`;
-    
-      const css = `
-        <style>
-          @page { size: A4; margin: 12mm; }
-          html, body { margin: 0; padding: 0; background: #fff; color: #111; font: 14px/1.5 system-ui, Arial, sans-serif; }
-          header { margin-bottom: 16px; }
-          h1 { font-size: 20px; margin: 0 0 6px 0; }
-          .meta { color: #444; font-size: 12px; margin-bottom: 12px; word-break: break-all; }
-          .scores .row { margin: 6px 0; }
-          .score-big { font-size: 24px; font-weight: 700; color: #005999; }
-          .bar { height: 10px; background: #eee; border-radius: 6px; overflow: hidden; margin: 6px 0 10px; }
-          .fill { height: 100%; background: #005999; width: 0; }
-          ul { margin: 8px 0 0 18px; }
-          .note { margin-top: 18px; font-size: 11px; color: #666; }
-          section { page-break-inside: avoid; }
-          body { padding: 12mm; }
-        </style>
-      `;
-    
-      return `
-        <html>
-          <head>
-            <meta charset="utf-8">
-            <title>Home Free Report</title>
-            ${css}
-          </head>
-          <body>
-            <header>
-              <h1>Home Free Accessibility Report</h1>
-              <div class="meta">Generated for: ${location.href}</div>
-            </header>
-    
-            <section class="scores">
-              <div class="row"><strong>Property Score:</strong> ${scores.property}/10</div>
-              <div class="bar"><div class="fill" style="width:${propertyPercent}%"></div></div>
-    
-              ${scores.hoodError
-                ? `<div class="row"><strong>Neighbourhood Score:</strong> Not Available</div>`
-                : `<div class="row"><strong>Neighbourhood Score:</strong> ${scores.hood}/10</div>
-                   <div class="bar"><div class="fill" style="width:${hoodPercent}%"></div></div>`}
-    
-              <div class="row"><strong>Total Score:</strong> <span class="score-big">${totalText}</span></div>
-            </section>
-    
-            <section>
-              <strong>Accessibility Features Found</strong>
-              <ul>${featuresHtml}</ul>
-            </section>
-    
-            <div class="note">Saved with Chrome Print to PDF</div>
-          </body>
-        </html>
-      `;
-    }
+    // PDF button click handler
     pdfButton.addEventListener("click", () => {
-      const w = window.open("", "_blank", "noopener,noreferrer");
+      const scoresPayload = {
+        property: typeof scores.property === "number" ? scores.property : 0,
+        hood: typeof scores.hood === "number" ? scores.hood : null,
+        hoodError: !!scores.hoodError,
+        features: Array.isArray(scores.features) ? scores.features.slice(0, 200) : []
+      };
+
+      const json = JSON.stringify({ s: scoresPayload, u: location.href });
+      const b64 = btoa(unescape(encodeURIComponent(json)));
+      const printUrl = chrome.runtime.getURL("print.html") + `?data_b64=${encodeURIComponent(b64)}&t=${Date.now()}`;
+
+      const w = window.open(printUrl, "_blank");
       if (!w) {
-        alert("Popup blocked. Allow popups to create the PDF.");
-        return;
+        alert("Popup blocked. Please allow popups to create the PDF.");
       }
-    
-      // Write and print immediately in the same user gesture
-      w.document.write(buildPrintableReport(scores));
-      w.document.close();
-    
-      try { w.focus(); } catch(_) {}
-      w.print();
-      setTimeout(() => { try { w.close(); } catch(_) {} }, 250);
     });
 
-
-  
     // Add the button to the panel
     panel.appendChild(pdfButton);
 
-  };
+    };
 
-  const scanPage = async () => {
-    if (isListingPage()) {
-      console.log("Listing page detected, injecting panel.");
-      
-      const property = getPropertyScore();
-      const hoodResult = await fetchHoodScore();
-      
-      const scores = {
-        ...property,
-        hood: hoodResult.hood,
-        hoodError: hoodResult.error
-      };
-      
-      createPanel(scores);
-  
-    } else {
-      console.log("Not a listing page, removing panel.");
-      document.getElementById("homefree-panel")?.remove();
-    }
-  };
-  
+    const scanPage = async () => {
+      if (isListingPage()) {
+        console.log("Listing page detected, injecting panel.");
 
-  const observeUrlChanges = () => {
-    const observer = new MutationObserver(() => {
-      if (location.href !== lastUrl) {
-        lastUrl = location.href;
-        console.log("URL changed:", lastUrl);
-        setTimeout(scanPage, 1000);
+        const property = getPropertyScore();
+        const hoodResult = await fetchHoodScore();
+
+        const scores = {
+          ...property,
+          hood: hoodResult.hood,
+          hoodError: hoodResult.error
+        };
+
+        createPanel(scores);
+
+      } else {
+        console.log("Not a listing page, removing panel.");
+        document.getElementById("homefree-panel")?.remove();
       }
-    });
+    };
 
-    observer.observe(document.body, { childList: true, subtree: true });
-  };
+    const observeUrlChanges = () => {
+      const observer = new MutationObserver(() => {
+        if (location.href !== lastUrl) {
+          lastUrl = location.href;
+          console.log("URL changed:", lastUrl);
+          setTimeout(scanPage, 1000);
+        }
+      });
 
-  if (document.readyState === "complete" || document.readyState === "interactive") {
-    setTimeout(scanPage, 1000);
-    observeUrlChanges();
-  } else {
-    document.addEventListener("DOMContentLoaded", () => {
+      observer.observe(document.body, { childList: true, subtree: true });
+    };
+
+    if (document.readyState === "complete" || document.readyState === "interactive") {
       setTimeout(scanPage, 1000);
       observeUrlChanges();
-    });
-  }
-})();
+    } else {
+      document.addEventListener("DOMContentLoaded", () => {
+        setTimeout(scanPage, 1000);
+        observeUrlChanges();
+      });
+    }
+    })();
