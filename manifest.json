@@ -14,7 +14,7 @@
         "*://*.realestate.com.au/*",
         "*://*.domain.com.au/*"
       ],
-      "js": ["jsPDF.umd.min.js","content.js"]
+      "js": ["content.js"]
     }
   ],
   "web_accessible_resources": [
