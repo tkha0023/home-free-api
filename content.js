@@ -544,7 +544,6 @@ content.appendChild(totalScore);
         </html>
       `;
     }
-    
     pdfButton.addEventListener("click", () => {
       const w = window.open("", "_blank", "noopener,noreferrer");
       if (!w) {
@@ -552,23 +551,13 @@ content.appendChild(totalScore);
         return;
       }
     
-      const html = buildPrintableReport(scores);
-    
-      w.document.open();
-      w.document.write(html);
+      // Write and print immediately in the same user gesture
+      w.document.write(buildPrintableReport(scores));
       w.document.close();
     
-      const doPrint = () => {
-        try { w.focus(); } catch(_) {}
-        w.print();
-        setTimeout(() => { try { w.close(); } catch(_) {} }, 250);
-      };
-    
-      if (w.document.readyState === "complete") {
-        setTimeout(doPrint, 50);
-      } else {
-        w.onload = () => setTimeout(doPrint, 50);
-      }
+      try { w.focus(); } catch(_) {}
+      w.print();
+      setTimeout(() => { try { w.close(); } catch(_) {} }, 250);
     });
 
 
