@@ -1,6 +1,6 @@
 # Home Free Accessibility Extension
 
-**Home Free** is a Chrome Extension that displays accessibility scores for real estate listings on sites like [realestate.com.au](https://www.realestate.com.au). It aims to improve housing search experiences for people with mobility or disability-related needs by analyzing listing content and local infrastructure.
+**Home Free** is a Chrome Extension that displays accessibility scores for real estate listings on sites like [realestate.com.au](https://www.realestate.com.au). It aims to improve housing search experiences for people with mobility or disability-related needs by analyzing listing content and local infrastructure. It was developed as part of a University project by Group 1 in course ITO5002. 
 
 ## Features
 
@@ -18,9 +18,19 @@
 
 ## Privacy & Permissions
 
-- No cookies, tab access, or history permissions are used.
-- Only interacts with `realestate.com.au` and a read-only API.
-- No user data is collected or transmitted.
+The extension reads publicly available listing content on supported real estate sites to calculate accessibility scores.
+
+To generate the Neighbourhood Accessibility Score, the extension sends the listing’s address (no personal user information) to:
+
+Nominatim (OpenStreetMap) — for geocoding the address to coordinates.
+
+Home Free API — a read-only backend that queries open data sources (e.g., Overpass API, City of Melbourne data) to assess local accessibility features.
+
+No personally identifying information, cookies, or browsing history are collected.
+
+Data is used only for generating the on-page scores and is not stored, sold, or shared for any purpose.
+
+
 
 ## Tech Stack
 
@@ -44,7 +54,7 @@ See `main.py` for implementation.
 ## Setup
 
 1. Clone the repo or download as ZIP.
-2. Load the `extension/` folder into Chrome via `chrome://extensions > Load Unpacked`.
+2. Load the folder into Chrome via `chrome://extensions > Load Unpacked`.
 3. Visit a listing on realestate.com.au to test.
 
 Alternatively, you can also install the extension directly from the Google Chrome Web Store.
@@ -69,10 +79,6 @@ python -m pip install -r requirements.txt -r requirements-dev.txt
 
 **Run tests**
 python -m pytest
-
-## License
-
-This project is licensed under the MIT License
 
 ---
 

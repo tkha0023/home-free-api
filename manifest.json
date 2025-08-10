@@ -6,13 +6,13 @@
   "host_permissions": [
     "*://*.realestate.com.au/*",
     "https://home-free-api.onrender.com/*",
-    "*://*.domain.com.au/*"
+    "https://nominatim.openstreetmap.org/*"
   ],
   "content_scripts": [
     {
       "matches": [
         "*://*.realestate.com.au/*",
-        "*://*.domain.com.au/*"
+        
       ],
       "js": ["content.js"]
     }
