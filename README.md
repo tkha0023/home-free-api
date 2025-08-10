@@ -49,6 +49,27 @@ See `main.py` for implementation.
 
 Alternatively, you can also install the extension directly from the Google Chrome Web Store.
 
+## Testing
+
+**Prerequisites**
+- Python 3.10+ installed
+- Run commands from the project root
+
+**Setup**
+
+**Windows:**
+python -m venv .venv
+.venv\Scripts\activate
+python -m pip install -r requirements.txt -r requirements-dev.txt
+
+**MacOS/Linux**
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt -r requirements-dev.txt
+
+**Run tests**
+python -m pytest
+
 ## License
 
 This project is licensed under the MIT License
